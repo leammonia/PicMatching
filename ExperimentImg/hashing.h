@@ -15,68 +15,65 @@ int HanmingDistance(string &str1, string &str2)
 	}
 	return distance;
 }
-//Phash
+//平均值hash
 std::string getHashValue(Mat &src)
 {
-	Mat img, dst;
 	string hashValue(64, '\0');
-	double grayScale[64];
-	double mean = 0.0;
-	
+	Mat img;
 	if (src.channels() == 3)
-	{
-		cvtColor(src, src, CV_BGR2GRAY);
-		img = Mat_<double>(src);
-	}
+		cvtColor(src, img, CV_BGR2GRAY);
 	else
-	{
-		img = Mat_<double>(src);
-	}
-
-	/* 第一步，缩放尺寸*/
+		img = src.clone();
 	resize(img, img, Size(8, 8));
-
-	/* 第二步，离散余弦变换，DCT系数求取*/
-	dct(img, dst);
-
-	/* 第三步，求取DCT系数均值（左上角8*8区块的DCT系数）*/
-	int k = 0;
-	for (int i = 0; i < 8; ++i) {
-		for (int j = 0; j < 8; ++j)
+	uchar *pData;
+	for (int i = 0; i < img.rows; i++)
+	{
+		pData = img.ptr<uchar>(i);
+		for (int j = 0; j < img.cols; j++)
 		{
-			grayScale[k] = dst.at<double>(i, j);
-			mean += dst.at<double>(i, j) / 64;
-			++k;
+			pData[j] = pData[j] / 4;
 		}
 	}
 
-	/* 第四步，计算哈希值。*/
-	for (int i = 0; i < 64; ++i)
+	int average = mean(img).val[0];
+
+	Mat mask = (img >= (uchar)average);
+	int index = 0;
+	for (int i = 0; i < mask.rows; i++)
 	{
-		if (grayScale[i] >= mean)
+		pData = mask.ptr<uchar>(i);
+		for (int j = 0; j < mask.cols; j++)
 		{
-			hashValue[i] = '1';
-		}
-		else
-		{
-			hashValue[i] = '0';
+			if (pData[j] == 0)
+				hashValue[index++] = '0';
+			else
+				hashValue[index++] = '1';
 		}
 	}
 	return hashValue;
 }
-
+std::wstring StringToWString(const std::string &str)
+  {
+     std::wstring wstr(str.length(), L' ');
+     std::copy(str.begin(), str.end(), wstr.begin());
+     return wstr;
+ }
 CString isSimiler(Mat src1,Mat src2) {
 	string pHashSrc1 = getHashValue(src1);
 	string pHashSrc2 = getHashValue(src2);
 	int distance = HanmingDistance(pHashSrc1, pHashSrc2);
-	if (distance <= 5) {
-		return _T("十分相似");
+	wstringstream ss;
+	if (distance <= 15) {
+		ss << L"十分相似 ";
 	}
-	else if (distance <= 10) {
-		return _T("一定程度上相似");
+	else if (distance <= 20) {
+		ss << L"一定程度上相似 ";
 	}
 	else {
-		return _T("非常不同");
+		ss << L"非常不同 ";
 	}
+	
+	//ss << distance<<L" "<< StringToWString(pHashSrc1)<<L" "<< StringToWString(pHashSrc2);
+	return ss.str().c_str();
 }
 
