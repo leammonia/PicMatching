@@ -41,7 +41,7 @@ public:
 	void ImageCopy(CImage* pImgSrc, CImage* pImgDrt);
 	void CImageToMat(CImage *cimage, Mat& mat);
 	void MatToCImage(CImage *cimage, Mat& mat);
-	void doMatch(int type,int type2);
+	CTime doMatch(int type,int type2);
 	void RANSAC(vector<DMatch> matches);
 	void kdtree(Mat descriptors1, Mat descriptors2);
 	void cross(Mat descriptors1, Mat descriptors2);

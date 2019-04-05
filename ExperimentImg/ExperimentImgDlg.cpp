@@ -8,7 +8,7 @@
 #include<opencv2\xfeatures2d.hpp>
 #include<opencv2\xfeatures2d\nonfree.hpp>
 #include<opencv2\opencv.hpp>
-
+#include "hashing.h"
 using namespace cv;
 using namespace xfeatures2d;
 using namespace std;
@@ -130,6 +130,8 @@ BOOL CExperimentImgDlg::OnInitDialog()
 	cmb_function2->InsertString(0, _T("RANSAC"));
 	cmb_function2->InsertString(1, _T("k-d tree"));
 	cmb_function2->InsertString(2, _T("cross"));
+	//hashing匹配算法与特征点无关
+	cmb_function2->InsertString(3, _T("hashing"));
 	//cmb_function2->InsertString(3, _T("hashing"));
 	cmb_function2->SetCurSel(0);
 
@@ -382,8 +384,7 @@ void CExperimentImgDlg::OnBnClickedButtonProcess()
 	int type = cmb_function->GetCurSel();
 	int type2 = cmb_function2->GetCurSel();
 	startTime = GetTickCount();
-	doMatch(type,type2);
-	CTime endTime= GetTickCount();
+	CTime endTime=doMatch(type,type2);
 	CString timeStr;
 
 	this->Invalidate();
@@ -393,18 +394,30 @@ void CExperimentImgDlg::OnBnClickedButtonProcess()
 	
 }
 
-void CExperimentImgDlg::doMatch(int type,int type2) {
+CTime CExperimentImgDlg::doMatch(int type,int type2) {
 	
-	if (imgSrc1 == NULL || imgSrc2 == NULL) return;
+	if (imgSrc1 == NULL || imgSrc2 == NULL) return GetTickCount();
 
 	CImageToMat(imgSrc1, srcImage1);
 	CImageToMat(imgSrc2, srcImage2);
+
 
 	//特征点的检测，并放入keypoint类型的vector中
 	//计算特征点描述子
 	Mat descriptors1;
 	Mat descriptors2;
 
+	if (type2==3) {
+		CString result = _T("两张图片")+isSimiler(srcImage1, srcImage2);
+
+		CTime endTime = GetTickCount();
+		UINT i;
+		i = MessageBox(result, TEXT("匹配结果"), MB_OK | MB_ICONASTERISK);
+		if (i == IDOK)
+		{
+			return endTime;
+		}
+	}
 	Ptr<Feature2D> features2d;
 	switch (type)
 	{
@@ -445,11 +458,11 @@ void CExperimentImgDlg::doMatch(int type,int type2) {
 		RANSAC(matches);
 		break;
 	case 1: //kd-tree 
-		if (type == 2) return;//不支持ORB
+		if (type == 2) return GetTickCount();//不支持ORB
 		kdtree(descriptors1, descriptors2);
 		break;
 	case 2://cross 和hashing唯一的共同点大概只有 计算hamming距离
-		if (type == 0 || type == 1) return;//不支持SIFT和SURF
+		if (type == 0 || type == 1) return GetTickCount();//不支持SIFT和SURF
 		cross(descriptors1, descriptors2);
 		break;
 	default:
@@ -466,6 +479,7 @@ void CExperimentImgDlg::doMatch(int type,int type2) {
 	if (result == NULL)
 		result = new CImage();
 	MatToCImage(result, resultMat);
+	return GetTickCount();
 
 }
 
