@@ -8,7 +8,7 @@
 #include<opencv2\xfeatures2d.hpp>
 #include<opencv2\xfeatures2d\nonfree.hpp>
 #include<opencv2\opencv.hpp>
-
+#include "hashing.h"
 using namespace cv;
 using namespace xfeatures2d;
 using namespace std;
@@ -130,6 +130,8 @@ BOOL CExperimentImgDlg::OnInitDialog()
 	cmb_function2->InsertString(0, _T("RANSAC"));
 	cmb_function2->InsertString(1, _T("k-d tree"));
 	cmb_function2->InsertString(2, _T("cross"));
+	//hashing匹配算法与特征点无关
+	cmb_function2->InsertString(3, _T("hashing"));
 	//cmb_function2->InsertString(3, _T("hashing"));
 	cmb_function2->SetCurSel(0);
 
@@ -400,11 +402,23 @@ void CExperimentImgDlg::doMatch(int type,int type2) {
 	CImageToMat(imgSrc1, srcImage1);
 	CImageToMat(imgSrc2, srcImage2);
 
+
 	//特征点的检测，并放入keypoint类型的vector中
 	//计算特征点描述子
 	Mat descriptors1;
 	Mat descriptors2;
 
+	if (type2==3) {
+		CString result = _T("两张图片")+isSimiler(srcImage1, srcImage2);
+
+		UINT i;
+		i = MessageBox(result, TEXT("匹配结果"), MB_OK | MB_ICONASTERISK);
+		if (i == IDOK)
+		{
+			return;
+		}
+		return;
+	}
 	Ptr<Feature2D> features2d;
 	switch (type)
 	{
